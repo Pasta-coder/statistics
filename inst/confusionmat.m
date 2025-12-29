@@ -118,10 +118,21 @@ function [C, order] = confusionmat (group, grouphat, opt = "Order", grouporder)
 
     % If categories of y_true and y_pred differ, require them to match:
     % (sanity check to prevent accidental mismatched schemas)
-    cats_y_pred = categories (y_pred);
-    if (! isequal (cats, cats_y_pred))
-      error ("confusionmat: categories of group and grouphat must be identical when using categorical inputs");
+    if (! exist ("unique_tokens", "var"))
+      % No Order specified: categories must match exactly
+      cats_y_pred = categories (y_pred);
+      if (! isequal (cats, cats_y_pred))
+        error ("confusionmat: categories of group and grouphat must be identical when using categorical inputs");
+      endif
+    else
+      % Order specified: ensure y_true and y_pred categories are subsets of Order
+      missing_true = setdiff (categories (y_true), cats);
+      missing_pred = setdiff (categories (y_pred), cats);
+      if (! isempty (missing_true) || ! isempty (missing_pred))
+        error ("confusionmat: grouporder must include all categories");
+      endif
     endif
+
 
     K = numel (cats);
 
@@ -298,3 +309,8 @@ endfunction
 %! [C, order] = confusionmat (g, p, "Order", ord);
 %! assert (isequal (order, categories (ord)));
 
+%!error <grouporder must include all categories>
+%! g = categorical({'A','B'},{'A','B'});
+%! p = categorical({'A','B'},{'A','B'});
+%! ord = categorical({'A'},{'A'});
+%! confusionmat (g, p, "Order", ord);
