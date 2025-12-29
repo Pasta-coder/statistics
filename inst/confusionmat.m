@@ -1,5 +1,6 @@
 ## Copyright (C) 2020 Stefano Guidoni <ilguido@users.sf.net>
 ## Copyright (C) 2022 Andreas Bertsatos <abertsatos@biol.uoa.gr>
+## Copyright (C) 2025 Jayant Chauhan <0001jayant@gmail.com>
 ##
 ## This file is part of the statistics package for GNU Octave.
 ##
@@ -42,7 +43,7 @@
 ## @var{grouporder} variable. The data type of @var{grouporder} must be the
 ## same of @var{group} and @var{grouphat}.
 ##
-## MATLAB compatibility: Octave misses string arrays and categorical vectors.
+## MATLAB compatibility: categorical vectors are supported; string arrays are not implemented yet.
 ##
 ## @seealso{crosstab}
 ## @end deftypefn
@@ -285,7 +286,7 @@ endfunction
 %! assert (all (C(3,:) == 0) && all (C(:,3) == 0));
 
 %!test
-%! g = categorical ({'A', NaN, 'B'}, {'A','B','C'});
+%! g = categorical ({'A','', 'B'}, {'A','B','C'});   ## '' → <undefined>
 %! p = categorical ({'A','B','B'}, {'A','B','C'});
 %! C = confusionmat (g, p);
 %! assert (sum (C(:)) == 2);
@@ -296,3 +297,4 @@ endfunction
 %! ord = categorical ({'C','A','B'}, {'A','B','C'});
 %! [C, order] = confusionmat (g, p, "Order", ord);
 %! assert (isequal (order, categories (ord)));
+
