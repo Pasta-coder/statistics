@@ -100,13 +100,11 @@ function [C, order] = confusionmat (group, grouphat, opt = "Order", grouporder)
     endif
   endif
 
-  ## -----------------------------------------------------------------------
-  ## CATEGORICAL PATH
-  ## -----------------------------------------------------------------------
+  ## Categorical path
+
   if (isa (y_true, "categorical"))
 
-    % Ensure class match already checked above; shape validated earlier.
-    % Determine category universe (respecting grouporder if provided)
+    ## Determine categories to use
     if (exist ("unique_tokens", "var"))
       if (! isa (unique_tokens, "categorical"))
         error ("confusionmat: grouporder must be categorical when group is categorical");
@@ -116,16 +114,16 @@ function [C, order] = confusionmat (group, grouphat, opt = "Order", grouporder)
       cats = categories (y_true);
     endif
 
-    % If categories of y_true and y_pred differ, require them to match:
-    % (sanity check to prevent accidental mismatched schemas)
+    ## If categories of y_true and y_pred differ, require them to match:
+    ## (sanity check to prevent accidental mismatched schemas)
     if (! exist ("unique_tokens", "var"))
-      % No Order specified: categories must match exactly
+      ## No Order specified: categories must match exactly
       cats_y_pred = categories (y_pred);
       if (! isequal (cats, cats_y_pred))
         error ("confusionmat: categories of group and grouphat must be identical when using categorical inputs");
       endif
     else
-      % Order specified: ensure y_true and y_pred categories are subsets of Order
+      ## Order specified: ensure y_true and y_pred categories are subsets of Order
       missing_true = setdiff (categories (y_true), cats);
       missing_pred = setdiff (categories (y_pred), cats);
       if (! isempty (missing_true) || ! isempty (missing_pred))
@@ -136,7 +134,7 @@ function [C, order] = confusionmat (group, grouphat, opt = "Order", grouporder)
 
     K = numel (cats);
 
-    % Edge: zero-category categorical -> return empty
+    ## Edge: zero-category categorical -> return empty
     if (K == 0)
       C = zeros (0, 0);
       unique_tokens = cats;
@@ -144,16 +142,16 @@ function [C, order] = confusionmat (group, grouphat, opt = "Order", grouporder)
       return;
     endif
 
-    % Convert to internal numeric codes: 1..K and NaN for <undefined>
+    ## Convert to internal numeric codes: 1..K and NaN for <undefined>
     t = double (y_true);
     p = double (y_pred);
 
-    % Drop undefined rows where either true or predicted is NaN
+    ## Drop undefined rows where either true or predicted is NaN
     valid = ! isnan (t) & ! isnan (p);
     t = t(valid);
     p = p(valid);
 
-    % If no valid observations after filtering, return zero matrix of size K
+    ## If no valid observations after filtering, return zero matrix of size K
     C = zeros (K, K);
     if (isempty (t))
       unique_tokens = cats;
@@ -161,8 +159,8 @@ function [C, order] = confusionmat (group, grouphat, opt = "Order", grouporder)
       return;
     endif
 
-    % Accumulate counts (vectorized)
-    % Ensure indices are valid positive integers
+    ## Accumulate counts (vectorized)
+    ## Ensure indices are valid positive integers
     if (any (t < 1) || any (t > K) || any (p < 1) || any (p > K))
       error ("confusionmat: categorical internal codes out of range for category universe");
     endif
@@ -173,9 +171,8 @@ function [C, order] = confusionmat (group, grouphat, opt = "Order", grouporder)
 
     unique_tokens = cats;
 
-  ## -----------------------------------------------------------------------
-  ## EXISTING NUMERIC / LOGICAL / STRING CELL / CHAR PATHS (unchanged)
-  ## -----------------------------------------------------------------------
+  ##(numeric, logical, char, string cell) paths
+
   elseif (isa (y_true, "numeric") || isa (y_true, "logical"))
     ## numeric or boolean vector
 
