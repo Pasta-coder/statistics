@@ -99,8 +99,72 @@ function [C, order] = confusionmat (group, grouphat, opt = "Order", grouporder)
     endif
   endif
 
-  ## compute the confusion matrix
-  if (isa (y_true, "numeric") || isa (y_true, "logical"))
+  ## -----------------------------------------------------------------------
+  ## CATEGORICAL PATH
+  ## -----------------------------------------------------------------------
+  if (isa (y_true, "categorical"))
+
+    % Ensure class match already checked above; shape validated earlier.
+    % Determine category universe (respecting grouporder if provided)
+    if (exist ("unique_tokens", "var"))
+      if (! isa (unique_tokens, "categorical"))
+        error ("confusionmat: grouporder must be categorical when group is categorical");
+      endif
+      cats = categories (unique_tokens);
+    else
+      cats = categories (y_true);
+    endif
+
+    % If categories of y_true and y_pred differ, require them to match:
+    % (sanity check to prevent accidental mismatched schemas)
+    cats_y_pred = categories (y_pred);
+    if (! isequal (cats, cats_y_pred))
+      error ("confusionmat: categories of group and grouphat must be identical when using categorical inputs");
+    endif
+
+    K = numel (cats);
+
+    % Edge: zero-category categorical -> return empty
+    if (K == 0)
+      C = zeros (0, 0);
+      unique_tokens = cats;
+      order = unique_tokens;
+      return;
+    endif
+
+    % Convert to internal numeric codes: 1..K and NaN for <undefined>
+    t = double (y_true);
+    p = double (y_pred);
+
+    % Drop undefined rows where either true or predicted is NaN
+    valid = ! isnan (t) & ! isnan (p);
+    t = t(valid);
+    p = p(valid);
+
+    % If no valid observations after filtering, return zero matrix of size K
+    C = zeros (K, K);
+    if (isempty (t))
+      unique_tokens = cats;
+      order = unique_tokens;
+      return;
+    endif
+
+    % Accumulate counts (vectorized)
+    % Ensure indices are valid positive integers
+    if (any (t < 1) || any (t > K) || any (p < 1) || any (p > K))
+      error ("confusionmat: categorical internal codes out of range for category universe");
+    endif
+
+    idx = sub2ind ([K, K], t, p);
+    counts = accumarray (idx, 1, [K*K, 1]);
+    C = reshape (counts, K, K);
+
+    unique_tokens = cats;
+
+  ## -----------------------------------------------------------------------
+  ## EXISTING NUMERIC / LOGICAL / STRING CELL / CHAR PATHS (unchanged)
+  ## -----------------------------------------------------------------------
+  elseif (isa (y_true, "numeric") || isa (y_true, "logical"))
     ## numeric or boolean vector
 
     ## MATLAB compatibility:
