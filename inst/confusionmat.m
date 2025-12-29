@@ -275,3 +275,24 @@ endfunction
 %! C  = [0 1 1 0 0 0 0 0; 0 0 0 0 1 0 0 0; 0 1 0 0 0 0 1 0; 0 0 0 1 0 1 0 0; ...
 %!       0 0 0 0 3 0 0 0; 0 0 0 1 0 1 0 0; 0 0 0 0 0 0 0 0; 0 0 0 0 0 0 0 2];
 %! assert (confusionmat (Yt, Yp), C)
+
+%!test
+%! g = categorical ({'A','A','B'}, {'A','B','C'});
+%! p = categorical ({'A','B','B'}, {'A','B','C'});
+%! [C, order] = confusionmat (g, p);
+%! assert (isequal (size (C), [3 3]));
+%! assert (isequal (order, categories (g)));
+%! assert (all (C(3,:) == 0) && all (C(:,3) == 0));
+
+%!test
+%! g = categorical ({'A', NaN, 'B'}, {'A','B','C'});
+%! p = categorical ({'A','B','B'}, {'A','B','C'});
+%! C = confusionmat (g, p);
+%! assert (sum (C(:)) == 2);
+
+%!test
+%! g = categorical ({'A','B','A'}, {'A','B','C'});
+%! p = categorical ({'B','B','A'}, {'A','B','C'});
+%! ord = categorical ({'C','A','B'}, {'A','B','C'});
+%! [C, order] = confusionmat (g, p, "Order", ord);
+%! assert (isequal (order, categories (ord)));
